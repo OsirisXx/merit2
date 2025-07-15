@@ -1560,8 +1560,9 @@
             "targetRole": "user"
         },
         "timestamp": 1752540519000,
-        "isRead": false,
-        "icon": "\ud83d\udc76"
+        "isRead": true,
+        "icon": "\ud83d\udc76",
+        "readAt": 1752564941000
     },
     {
         "id": "notif_6875a568c00bf4.91271157",
@@ -1585,8 +1586,9 @@
             "targetRole": "user"
         },
         "timestamp": 1752540520000,
-        "isRead": false,
-        "icon": "\ud83d\udc76"
+        "isRead": true,
+        "icon": "\ud83d\udc76",
+        "readAt": 1752564941000
     },
     {
         "id": "notif_6875a568c3ca90.13402076",
@@ -1955,8 +1957,9 @@
             "targetRole": "user"
         },
         "timestamp": 1752540522000,
-        "isRead": false,
-        "icon": "\ud83d\udc76"
+        "isRead": true,
+        "icon": "\ud83d\udc76",
+        "readAt": 1752564941000
     },
     {
         "id": "notif_6875a56b753904.74057908",
@@ -1980,8 +1983,9 @@
             "targetRole": "user"
         },
         "timestamp": 1752540523000,
-        "isRead": false,
-        "icon": "\ud83d\udc76"
+        "isRead": true,
+        "icon": "\ud83d\udc76",
+        "readAt": 1752564941000
     },
     {
         "id": "notif_6875a56b7ad0c2.71873880",
@@ -2357,8 +2361,9 @@
             "targetRole": "user"
         },
         "timestamp": 1752540574000,
-        "isRead": false,
-        "icon": "\ud83d\udc76"
+        "isRead": true,
+        "icon": "\ud83d\udc76",
+        "readAt": 1752564941000
     },
     {
         "id": "notif_6875a59e323b05.32794526",

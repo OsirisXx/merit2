@@ -1,0 +1,21 @@
+{
+  "openai": {
+    "api_key": "sk-your-openai-api-key-here",
+    "model": "gpt-3.5-turbo",
+    "max_tokens": 150,
+    "temperature": 0.7
+  },
+  "firebase": {
+    "apiKey": "AIzaSy-your-firebase-api-key-here",
+    "serverKey": "your-firebase-server-key-here",
+    "projectId": "your-firebase-project-id",
+    "messagingSenderId": "your-messaging-sender-id",
+    "appId": "your-firebase-app-id",
+    "measurementId": "your-measurement-id",
+    "serviceAccount": "your-service-account-key-json"
+  },
+  "chatbot": {
+    "system_prompt": "You are a helpful assistant for child adoption in the Philippines.",
+    "fallback_message": "I apologize, but I'm having trouble processing your request right now. Please try again later."
+  }
+} 

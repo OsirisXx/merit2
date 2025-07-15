@@ -4,8 +4,11 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Load configuration
-$config = json_decode(file_get_contents('config.json'), true);
+// Load configuration helper
+require_once 'config_helper.php';
+
+// Get configuration with fallback support
+$config = getConfigWithFallback();
 
 // Enable error logging for debugging
 error_log("Chat request received: " . date('Y-m-d H:i:s'));
