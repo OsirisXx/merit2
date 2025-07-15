@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Debug Test</title>
+</head>
+<body>
+    <h1>Chat Debug Test</h1>
+    <div id="debug-output"></div>
+    <button onclick="testFirebaseConnection()">Test Firebase Connection</button>
+    <button onclick="checkExistingChats()">Check Existing Chats</button>
+    <button onclick="testAnonymousAuth()">Test Anonymous Auth</button>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        function log(message) {
+            const output = document.getElementById('debug-output');
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        function testFirebaseConnection() {
+            log('🔥 Testing Firebase connection...');
+            
+            // Test Firestore connection
+            db.collection('users').limit(1).get()
+                .then(snapshot => {
+                    log('✅ Firestore connection successful');
+                    log('📊 Users collection has ' + snapshot.size + ' documents');
+                })
+                .catch(error => {
+                    log('❌ Firestore connection failed: ' + error.message);
+                });
+
+            // Test Realtime Database connection
+            realtimeDb.ref('chats').once('value')
+                .then(snapshot => {
+                    log('✅ Realtime Database connection successful');
+                    const chats = snapshot.val();
+                    if (chats) {
+                        log('📊 Found ' + Object.keys(chats).length + ' chats');
+                    } else {
+                        log('📊 No chats found in database');
+                    }
+                })
+                .catch(error => {
+                    log('❌ Realtime Database connection failed: ' + error.message);
+                });
+        }
+
+        function checkExistingChats() {
+            log('🔍 Checking existing chats...');
+            
+            realtimeDb.ref('chats').once('value')
+                .then(snapshot => {
+                    const chats = snapshot.val();
+                    if (chats) {
+                        log('📊 Found ' + Object.keys(chats).length + ' chats:');
+                        Object.keys(chats).forEach(chatId => {
+                            const chat = chats[chatId];
+                            log(`- Chat ${chatId}: ${chat.participant_user} <-> ${chat.participant_admin} (${chat.connection_type || 'unknown type'})`);
+                        });
+                    } else {
+                        log('📊 No chats found in database');
+                    }
+                })
+                .catch(error => {
+                    log('❌ Error checking chats: ' + error.message);
+                });
+        }
+
+        function testAnonymousAuth() {
+            log('🔑 Testing anonymous authentication...');
+            
+            auth.signInAnonymously()
+                .then(() => {
+                    log('✅ Anonymous authentication successful');
+                    log('👤 Current user: ' + (auth.currentUser ? auth.currentUser.uid : 'none'));
+                })
+                .catch(error => {
+                    log('❌ Anonymous authentication failed: ' + error.message);
+                });
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            log('🚀 Starting chat debug tests...');
+            testFirebaseConnection();
+        };
+    </script>
+</body>
+</html> 

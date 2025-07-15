@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cleanup Admin Participants</title>
+</head>
+<body>
+    <h1>Cleanup Admin Participants</h1>
+    <button onclick="cleanupAdminParticipants()">Clean Up Test/Duplicate Admins</button>
+    <div id="result"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const realtimeDb = firebase.database();
+        
+        async function cleanupAdminParticipants() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Cleaning up admin participants...';
+            
+            try {
+                // Get all centralized chats
+                const chatsSnapshot = await realtimeDb.ref('chats').once('value');
+                const chats = chatsSnapshot.val() || {};
+                
+                let cleanedChats = 0;
+                let removedAdmins = 0;
+                
+                for (const chatId in chats) {
+                    const chat = chats[chatId];
+                    
+                    if (chat.is_centralized && chat.participant_admins) {
+                        const participantAdmins = chat.participant_admins;
+                        const cleanedAdmins = {};
+                        let hasChanges = false;
+                        
+                        for (const adminId in participantAdmins) {
+                            const admin = participantAdmins[adminId];
+                            
+                            // Keep only real admin entries
+                            if (adminId !== 'system' && 
+                                adminId !== 'test' && 
+                                admin.name !== 'Test Admin' && 
+                                admin.name !== 'System' &&
+                                adminId.length > 10) {
+                                
+                                cleanedAdmins[adminId] = admin;
+                            } else {
+                                hasChanges = true;
+                                removedAdmins++;
+                                console.log(`Removing admin: ${admin.name} (${adminId})`);
+                            }
+                        }
+                        
+                        if (hasChanges) {
+                            await realtimeDb.ref(`chats/${chatId}/participant_admins`).set(cleanedAdmins);
+                            cleanedChats++;
+                        }
+                    }
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3>Cleanup Complete!</h3>
+                    <p>✅ Cleaned ${cleanedChats} chats</p>
+                    <p>🗑️ Removed ${removedAdmins} test/duplicate admin entries</p>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

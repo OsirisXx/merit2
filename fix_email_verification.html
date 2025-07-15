@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Email Verification Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="email"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fix Email Verification Status</h1>
+        <p>This tool helps fix the <code>isVerified</code> field in Firestore when email verification is not working properly.</p>
+        
+        <div class="form-group">
+            <label for="userEmail">User Email:</label>
+            <input type="email" id="userEmail" placeholder="Enter the user's email address" required>
+        </div>
+        
+        <button onclick="checkEmailVerification()">Check & Fix Verification Status</button>
+        <button onclick="checkCurrentUser()">Check Current Logged User</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtI0y8XwjmrRK8CZdbdp5r6gYMvOnyWWo",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.appspot.com",
+            messagingSenderId: "1026616103995",
+            appId: "1:1026616103995:web:45b80f4e91ef62f8b3d2f5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function checkCurrentUser() {
+            try {
+                showResult('Checking current user...', 'info');
+                
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        showResult(`
+                            <strong>Current User Info:</strong><br>
+                            <div class="user-info">
+                                <strong>UID:</strong> ${user.uid}<br>
+                                <strong>Email:</strong> ${user.email}<br>
+                                <strong>Email Verified (Auth):</strong> ${user.emailVerified}<br>
+                            </div>
+                            <button onclick="fixUserVerification('${user.uid}', '${user.email}')" style="margin-top: 10px;">
+                                Fix Current User Verification
+                            </button>
+                        `, 'info');
+                    } else {
+                        showResult('No user is currently logged in.', 'error');
+                    }
+                });
+            } catch (error) {
+                showResult(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkEmailVerification() {
+            const email = document.getElementById('userEmail').value.trim();
+            
+            if (!email) {
+                showResult('Please enter an email address.', 'error');
+                return;
+            }
+
+            try {
+                showResult('Checking email verification status...', 'info');
+
+                const usersQuery = await db.collection('users').where('email', '==', email).get();
+                
+                if (usersQuery.empty) {
+                    showResult('No user found with this email address.', 'error');
+                    return;
+                }
+
+                const userDoc = usersQuery.docs[0];
+                const userData = userDoc.data();
+                const userId = userDoc.id;
+
+                showResult(`
+                    <strong>User Found:</strong><br>
+                    <div class="user-info">
+                        <strong>User ID:</strong> ${userId}<br>
+                        <strong>Email:</strong> ${userData.email}<br>
+                        <strong>isVerified:</strong> ${userData.isVerified || false}<br>
+                        <strong>emailVerified:</strong> ${userData.emailVerified || false}<br>
+                    </div>
+                    <button onclick="fixUserVerification('${userId}', '${email}')" style="margin-top: 10px;">
+                        Fix Verification Status
+                    </button>
+                `, 'info');
+
+            } catch (error) {
+                showResult(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function fixUserVerification(userId, email) {
+            try {
+                showResult('Fixing user verification status...', 'info');
+                
+                await db.collection('users').doc(userId).update({
+                    isVerified: true,
+                    emailVerified: true,
+                    verifiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    verificationMethod: 'manual_fix_tool'
+                });
+
+                showResult(`
+                    <strong>✅ Success!</strong><br>
+                    Email verification fixed for: ${email}<br>
+                    The user can now reset their password.
+                `, 'success');
+
+            } catch (error) {
+                showResult(`Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html> 

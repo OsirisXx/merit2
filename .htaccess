@@ -1,0 +1,80 @@
+# Simplified .htaccess for Hostinger compatibility
+# Basic security and redirects only
+
+# Default document
+DirectoryIndex Index.php index.php index.html
+
+# Enable HTTPS redirect (only if HTTPS is available)
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^localhost
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Prevent access to sensitive files
+<Files "config.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "admin_users.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "notifications.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "fcm_tokens.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Prevent access to log files
+<FilesMatch "\.log$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent access to hidden files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevent access to Firebase service account
+<Files "ally-user-firebase-adminsdk-fbsvc-4f2d3d1509.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Enable compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+# Cache static files
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+# Error pages (optional - customize as needed)
+ErrorDocument 404 /Index.php
+ErrorDocument 500 /Index.php 

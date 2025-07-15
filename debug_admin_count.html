@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Admin Count</title>
+</head>
+<body>
+    <h1>Debug Admin Count in Centralized Chat</h1>
+    <button onclick="checkAdminCount()">Check Admin Count</button>
+    <div id="result"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const realtimeDb = firebase.database();
+        
+        async function checkAdminCount() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Checking admin count...';
+            
+            try {
+                // Get all centralized chats
+                const chatsSnapshot = await realtimeDb.ref('chats').once('value');
+                const chats = chatsSnapshot.val() || {};
+                
+                let html = '<h3>Centralized Chats Admin Count:</h3>';
+                
+                for (const chatId in chats) {
+                    const chat = chats[chatId];
+                    
+                    if (chat.is_centralized) {
+                        const participantAdmins = chat.participant_admins || {};
+                        const adminCount = Object.keys(participantAdmins).length;
+                        
+                        html += `<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd;">`;
+                        html += `<strong>Chat ID:</strong> ${chatId}<br>`;
+                        html += `<strong>User:</strong> ${chat.user_name || 'Unknown'}<br>`;
+                        html += `<strong>Admin Count:</strong> ${adminCount}<br>`;
+                        html += `<strong>Participant Admins:</strong><br>`;
+                        
+                        for (const adminId in participantAdmins) {
+                            const admin = participantAdmins[adminId];
+                            html += `&nbsp;&nbsp;- ${admin.name} (ID: ${adminId})<br>`;
+                        }
+                        
+                        html += `</div>`;
+                    }
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

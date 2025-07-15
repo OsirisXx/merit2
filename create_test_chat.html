@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test Chat</title>
+</head>
+<body>
+    <h1>Create Test Chat</h1>
+    <div id="output"></div>
+    <button onclick="createTestChat()">Create Test Chat</button>
+    <button onclick="sendTestMessage()">Send Test Message</button>
+    <button onclick="listAllChats()">List All Chats</button>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        // Test user IDs (using actual user IDs from the system)
+        const testUserId1 = 'h8qq0E8avWO74cqS2Goy1wtENJh1'; // Admin user
+        const testUserId2 = 'glmjVq9FaVTsy2pdYx2pZGIiqCS2'; // Another admin user
+
+        async function createTestChat() {
+            try {
+                log('🔑 Authenticating anonymously...');
+                await auth.signInAnonymously();
+                log('✅ Anonymous authentication successful');
+
+                const chatId = `${testUserId1}_${testUserId2}`;
+                log('📝 Creating test chat: ' + chatId);
+
+                const chatData = {
+                    participant_user: testUserId1,
+                    participant_admin: testUserId2,
+                    connection_type: 'adoption',
+                    created_at: Date.now(),
+                    created_by: testUserId1,
+                    last_activity: Date.now(),
+                    last_message: 'Test chat created',
+                    last_message_timestamp: Date.now(),
+                    unread_count: 0
+                };
+
+                await realtimeDb.ref(`chats/${chatId}`).set(chatData);
+                log('✅ Test chat created successfully!');
+
+            } catch (error) {
+                log('❌ Error creating test chat: ' + error.message);
+            }
+        }
+
+        async function sendTestMessage() {
+            try {
+                const chatId = `${testUserId1}_${testUserId2}`;
+                const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                
+                const messageData = {
+                    messageId: messageId,
+                    senderId: testUserId1,
+                    receiverId: testUserId2,
+                    senderName: 'Test User',
+                    message: 'Hello! This is a test message.',
+                    timestamp: Date.now(),
+                    serverTimestamp: Date.now(),
+                    read_by_receiver: false,
+                    deleted_by_sender: false,
+                    deleted_by_receiver: false,
+                    isSystemMessage: false,
+                    messageType: 'text',
+                    created_at: Date.now()
+                };
+
+                await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                
+                // Update chat's last message
+                await realtimeDb.ref(`chats/${chatId}`).update({
+                    last_message: messageData.message,
+                    last_message_timestamp: messageData.timestamp,
+                    last_activity: messageData.timestamp
+                });
+
+                log('✅ Test message sent successfully!');
+
+            } catch (error) {
+                log('❌ Error sending test message: ' + error.message);
+            }
+        }
+
+        async function listAllChats() {
+            try {
+                log('📋 Listing all chats...');
+                
+                const snapshot = await realtimeDb.ref('chats').once('value');
+                const chats = snapshot.val();
+                
+                if (chats) {
+                    log('📊 Found ' + Object.keys(chats).length + ' chats:');
+                    Object.keys(chats).forEach(chatId => {
+                        const chat = chats[chatId];
+                        log(`- ${chatId}: ${chat.participant_user} <-> ${chat.participant_admin} (${chat.connection_type})`);
+                        log(`  Last message: "${chat.last_message}" at ${new Date(chat.last_message_timestamp).toLocaleString()}`);
+                    });
+                } else {
+                    log('📊 No chats found in database');
+                }
+
+            } catch (error) {
+                log('❌ Error listing chats: ' + error.message);
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Test chat creator ready');
+            log('Click "Create Test Chat" to create a test conversation');
+        };
+    </script>
+</body>
+</html> 

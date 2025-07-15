@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Progress & Notifications</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .section { border: 1px solid #ddd; margin: 15px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Progress & Notifications</h1>
+    
+    <div class="section">
+        <h3>Navigation Test</h3>
+        <p><a href="Dashboard.php">Go to Dashboard</a> - Check if notification bell appears in navbar</p>
+        <p><a href="ProgTracking.php">Go to Progress Tracking</a> - Check if unlock buttons appear</p>
+        <p><a href="session_debug.php">Check Session Status</a> - Verify login state</p>
+    </div>
+
+    <div class="section">
+        <h3>Quick Tests</h3>
+        <button onclick="testNotifications()">Test Notifications File</button>
+        <button onclick="testCurrentUser()">Check Current User</button>
+        <button onclick="testSteps()">Check Step Status</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `section ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function testNotifications() {
+            addResult('Testing notifications...', 'info');
+            fetch('notifications.json')
+                .then(response => response.json())
+                .then(data => {
+                    const userNotifs = data.filter(n => n.userId === 'h8qq0E8avWO74cqS2Goy1wtENJh1');
+                    addResult(`✅ Found ${userNotifs.length} notifications for user h8qq0E8avWO74cqS2Goy1wtENJh1`, 'success');
+                })
+                .catch(error => {
+                    addResult(`❌ Notification test failed: ${error.message}`, 'error');
+                });
+        }
+
+        function testCurrentUser() {
+            // This would need to be done via PHP, but let's check what we can
+            addResult('Current user should be: h8qq0E8avWO74cqS2Goy1wtENJh1 (admin)', 'info');
+        }
+
+        function testSteps() {
+            addResult('Steps 9 and 10 should show unlock buttons if they are locked and user is admin', 'info');
+        }
+
+        // Auto-run basic tests
+        setTimeout(() => {
+            testNotifications();
+            testCurrentUser();
+            testSteps();
+        }, 500);
+    </script>
+</body>
+</html> 

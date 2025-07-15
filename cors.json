@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://meritxell-ally.org", "http://meritxell-ally.org"],
+    "method": ["GET", "PUT", "POST", "DELETE"],
+    "maxAgeSeconds": 3600
+  }
+]

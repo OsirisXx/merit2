@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Centralized Test Chat</title>
+</head>
+<body>
+    <h1>Create Centralized Test Chat</h1>
+    <div id="output"></div>
+    <button onclick="createCentralizedChat()">Create Centralized Chat</button>
+    <button onclick="sendTestMessage()">Send Test Message</button>
+    <button onclick="sendAdminMessage()">Send Admin Message</button>
+    <button onclick="listCentralizedChats()">List All Centralized Chats</button>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        // Test user IDs (using actual user IDs from the system)
+        const testUserId = 'h8qq0E8avWO74cqS2Goy1wtENJh1'; // Admin user
+        const testAdminId = 'glmjVq9FaVTsy2pdYx2pZGIiqCS2'; // Another admin user
+
+        async function createCentralizedChat() {
+            try {
+                log('🔑 Authenticating anonymously...');
+                await auth.signInAnonymously();
+                log('✅ Anonymous authentication successful');
+
+                const chatId = `user_${testUserId}`;
+                log('📝 Creating centralized chat: ' + chatId);
+
+                const chatData = {
+                    chat_type: 'user_admin_centralized',
+                    user_id: testUserId,
+                    user_name: 'Test User',
+                    connection_type: 'adoption',
+                    created_at: Date.now(),
+                    created_by: 'system',
+                    last_activity: Date.now(),
+                    last_message: 'Centralized chat created',
+                    last_message_timestamp: Date.now(),
+                    unread_count: 0,
+                    participant_admins: {
+                        [testAdminId]: {
+                            id: testAdminId,
+                            name: 'Test Admin',
+                            joined_at: Date.now(),
+                            last_active: Date.now()
+                        }
+                    },
+                    is_centralized: true
+                };
+
+                await realtimeDb.ref(`chats/${chatId}`).set(chatData);
+                log('✅ Centralized chat created successfully!');
+
+                // Send welcome message
+                const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                const messageData = {
+                    messageId: messageId,
+                    senderId: 'system',
+                    senderName: 'System',
+                    senderRole: 'system',
+                    message: 'Welcome to your centralized chat! All admins can see and respond to your messages here.',
+                    timestamp: Date.now(),
+                    serverTimestamp: Date.now(),
+                    isSystemMessage: true,
+                    messageType: 'welcome',
+                    created_at: Date.now()
+                };
+
+                await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                log('✅ Welcome message sent');
+
+            } catch (error) {
+                log('❌ Error creating centralized chat: ' + error.message);
+            }
+        }
+
+        async function sendTestMessage() {
+            try {
+                const chatId = `user_${testUserId}`;
+                const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                
+                const messageData = {
+                    messageId: messageId,
+                    senderId: testUserId,
+                    senderName: 'Test User',
+                    senderRole: 'user',
+                    message: 'Hello admins! This is a test message from the user.',
+                    timestamp: Date.now(),
+                    serverTimestamp: Date.now(),
+                    read_by_receiver: false,
+                    deleted_by_sender: false,
+                    deleted_by_receiver: false,
+                    isSystemMessage: false,
+                    messageType: 'text',
+                    created_at: Date.now()
+                };
+
+                await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                
+                // Update chat's last message
+                await realtimeDb.ref(`chats/${chatId}`).update({
+                    last_message: messageData.message,
+                    last_message_timestamp: messageData.timestamp,
+                    last_activity: messageData.timestamp
+                });
+
+                log('✅ Test user message sent successfully!');
+
+            } catch (error) {
+                log('❌ Error sending test message: ' + error.message);
+            }
+        }
+
+        async function sendAdminMessage() {
+            try {
+                const chatId = `user_${testUserId}`;
+                const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                
+                const messageData = {
+                    messageId: messageId,
+                    senderId: testAdminId,
+                    senderName: 'Test Admin',
+                    senderRole: 'admin',
+                    message: 'Hello! This is a response from an admin. We are here to help you.',
+                    timestamp: Date.now(),
+                    serverTimestamp: Date.now(),
+                    read_by_receiver: false,
+                    deleted_by_sender: false,
+                    deleted_by_receiver: false,
+                    isSystemMessage: false,
+                    messageType: 'text',
+                    created_at: Date.now()
+                };
+
+                await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                
+                // Update chat's last message
+                await realtimeDb.ref(`chats/${chatId}`).update({
+                    last_message: messageData.message,
+                    last_message_timestamp: messageData.timestamp,
+                    last_activity: messageData.timestamp
+                });
+
+                // Update admin participation
+                await realtimeDb.ref(`chats/${chatId}/participant_admins/${testAdminId}`).update({
+                    last_active: Date.now()
+                });
+
+                log('✅ Test admin message sent successfully!');
+
+            } catch (error) {
+                log('❌ Error sending admin message: ' + error.message);
+            }
+        }
+
+        async function listCentralizedChats() {
+            try {
+                log('📋 Listing all centralized chats...');
+                
+                const snapshot = await realtimeDb.ref('chats').once('value');
+                const chats = snapshot.val();
+                
+                if (chats) {
+                    const centralizedChats = Object.keys(chats).filter(chatId => {
+                        const chat = chats[chatId];
+                        return chat.is_centralized;
+                    });
+                    
+                    log('📊 Found ' + centralizedChats.length + ' centralized chats:');
+                    centralizedChats.forEach(chatId => {
+                        const chat = chats[chatId];
+                        log(`- ${chatId}: User ${chat.user_name} (${chat.connection_type})`);
+                        log(`  Last message: "${chat.last_message}" at ${new Date(chat.last_message_timestamp).toLocaleString()}`);
+                        
+                        if (chat.participant_admins) {
+                            const adminNames = Object.values(chat.participant_admins).map(admin => admin.name).join(', ');
+                            log(`  Participating admins: ${adminNames}`);
+                        }
+                    });
+                } else {
+                    log('📊 No chats found in database');
+                }
+
+            } catch (error) {
+                log('❌ Error listing centralized chats: ' + error.message);
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Centralized chat creator ready');
+            log('Click "Create Centralized Chat" to create a test conversation');
+        };
+    </script>
+</body>
+</html> 

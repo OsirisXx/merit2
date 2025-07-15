@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Email Verification - Ally</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            height: 60px;
+            margin-bottom: 20px;
+        }
+        .success {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .error {
+            color: #f44336;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .loading {
+            color: #2196F3;
+            font-size: 18px;
+        }
+        .button {
+            background-color: #7CB9E8;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://www.meritxellchildrensfoundation.org/images/logo-with-words-3.png" alt="Ally Logo" class="logo">
+        
+        <div id="status" class="loading">
+            <div class="spinner"></div>
+            Verifying your email...
+        </div>
+        
+        <div id="action" style="display: none;">
+            <a href="https://localhost:8000/Signin.php" class="button">Continue to App</a>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            projectId: "ally-user",
+            storageBucket: "ally-user.appspot.com",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const statusDiv = document.getElementById('status');
+        const actionDiv = document.getElementById('action');
+
+        // Check if this is an email verification callback
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        const oobCode = urlParams.get('oobCode');
+
+        if (mode === 'verifyEmail' && oobCode) {
+            // Apply the email verification code
+            auth.applyActionCode(oobCode)
+                .then(async () => {
+                    statusDiv.innerHTML = '<div class="success">✅ Email Verified Successfully!</div><p>Updating your account...</p>';
+
+                    // Get user info from the action code
+                    const info = await auth.checkActionCode(oobCode);
+                    const email = info.data.email;
+                    
+                    // Find user by email and trigger your working Cloud Function
+                    const querySnapshot = await db.collection('users').where('email', '==', email).get();
+                    
+                    if (!querySnapshot.empty) {
+                        const userDoc = querySnapshot.docs[0];
+                        const userId = userDoc.id;
+                        
+                        // Call your existing Cloud Function that works
+                        try {
+                            const response = await fetch('https://us-central1-ally-user.cloudfunctions.net/handleEmailVerification', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ uid: userId })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                statusDiv.innerHTML = '<div class="success">✅ Email Verified Successfully!</div><p>Your account is now verified and ready to use.</p>';
+                                actionDiv.style.display = 'block';
+                            } else {
+                                throw new Error(result.message || 'Verification update failed');
+                            }
+                        } catch (error) {
+                            console.error('Cloud Function error:', error);
+                            statusDiv.innerHTML = '<div class="success">✅ Email Verified!</div><p>Your email is verified. You can now sign in to your account.</p>';
+                            actionDiv.style.display = 'block';
+                        }
+                    } else {
+                        statusDiv.innerHTML = '<div class="success">✅ Email Verified!</div><p>Your email is verified. You can now sign in to your account.</p>';
+                        actionDiv.style.display = 'block';
+                    }
+                })
+                .catch((error) => {
+                    console.error('Verification error:', error);
+                    statusDiv.innerHTML = '<div class="error">❌ Verification Failed</div><p>' + error.message + '</p><p>Please try requesting a new verification email.</p>';
+                    actionDiv.style.display = 'block';
+                });
+        } else {
+            // Not a verification link, redirect to main site
+            statusDiv.innerHTML = '<div class="error">❌ Invalid verification link</div><p>This link is not valid or has expired.</p>';
+            actionDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

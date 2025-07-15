@@ -1,0 +1,19 @@
+# MINIMAL .htaccess - Use this if you get 403 errors
+# Rename this file to .htaccess if needed
+
+DirectoryIndex Index.php index.php index.html
+
+# Basic file protection only
+<Files "config.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "*.json">
+    Order allow,deny
+    Deny from all
+    <FilesMatch "^(cors|firebase)\.json$">
+        Order allow,deny
+        Allow from all
+    </FilesMatch>
+</Files> 

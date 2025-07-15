@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Firebase Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007cba; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Simple Firebase Notification Test</h1>
+    
+    <div id="status" class="status info">Starting test...</div>
+    
+    <div>
+        <button class="btn-primary" onclick="testBasicFirebase()">1️⃣ Test Firebase Connection</button>
+        <button class="btn-primary" onclick="testFileSystem()">2️⃣ Test File System</button>
+        <button class="btn-success" onclick="sendSimpleNotification()">3️⃣ Send Test Notification</button>
+        <button class="btn-success" onclick="checkNotifications()">4️⃣ Check Notifications</button>
+    </div>
+
+    <div id="results"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        let testResults = [];
+        
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            
+            testResults.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            updateResults();
+        }
+        
+        function updateResults() {
+            document.getElementById('results').innerHTML = 
+                '<h3>Test Results:</h3><pre>' + testResults.join('\n') + '</pre>';
+        }
+
+        async function testBasicFirebase() {
+            updateStatus('Testing Firebase connection...', 'info');
+            
+            try {
+                // Try to load config
+                const configResponse = await fetch('config.json');
+                const config = await configResponse.json();
+                
+                updateStatus('✅ Config loaded successfully', 'success');
+                console.log('Firebase config:', config.firebase);
+                
+                // Check if we have real Firebase config
+                if (config.firebase.apiKey === 'YOUR_FIREBASE_API_KEY_HERE') {
+                    updateStatus('⚠️ Firebase config has placeholder values - will use file system instead', 'error');
+                    return false;
+                }
+                
+                // Try to initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(config.firebase);
+                    updateStatus('✅ Firebase initialized successfully', 'success');
+                } else {
+                    updateStatus('✅ Firebase already initialized', 'success');
+                }
+                
+                // Test Firestore connection
+                const db = firebase.firestore();
+                const testDoc = await db.collection('test').doc('connection').set({
+                    test: true,
+                    timestamp: new Date()
+                });
+                
+                updateStatus('✅ Firestore connection working!', 'success');
+                return true;
+                
+            } catch (error) {
+                updateStatus('❌ Firebase test failed: ' + error.message, 'error');
+                console.error('Firebase error:', error);
+                return false;
+            }
+        }
+
+        async function testFileSystem() {
+            updateStatus('Testing file-based notification system...', 'info');
+            
+            try {
+                // Test if we can access the notifications file
+                const response = await fetch('notifications.json');
+                
+                if (response.ok) {
+                    const notifications = await response.json();
+                    updateStatus(`✅ Found ${notifications.length} existing notifications in file`, 'success');
+                    return true;
+                } else if (response.status === 404) {
+                    updateStatus('ℹ️ No notifications.json file exists yet (this is normal)', 'info');
+                    return true;
+                } else {
+                    updateStatus('⚠️ Cannot access notifications.json file', 'error');
+                    return false;
+                }
+                
+            } catch (error) {
+                updateStatus('❌ File system test failed: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function sendSimpleNotification() {
+            updateStatus('Sending test notification...', 'info');
+            
+            // First try Firebase
+            const firebaseWorking = await testBasicFirebase();
+            
+            if (firebaseWorking) {
+                try {
+                    const db = firebase.firestore();
+                    const userId = 'h8qq0E8avWO74cqS2Goy1wtENJh1';
+                    const notificationId = 'test_' + Date.now();
+                    
+                    const notification = {
+                        id: notificationId,
+                        userId: userId,
+                        type: 'test',
+                        title: 'Test Notification',
+                        message: 'This is a test notification from the browser',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        isRead: false,
+                        icon: '🧪',
+                        createdAt: new Date().toISOString(),
+                        data: {
+                            isAdminNotification: true,
+                            source: 'browser_test'
+                        }
+                    };
+                    
+                    // Send to multiple collections
+                    const batch = db.batch();
+                    batch.set(db.collection('notifications').doc(notificationId), notification);
+                    batch.set(db.collection('users').doc(userId).collection('notifications').doc(notificationId), notification);
+                    batch.set(db.collection('notification_logs').doc(notificationId), notification);
+                    
+                    await batch.commit();
+                    
+                    updateStatus('✅ Firebase notification sent successfully!', 'success');
+                    return true;
+                    
+                } catch (error) {
+                    updateStatus('❌ Firebase notification failed: ' + error.message, 'error');
+                    console.error('Firebase notification error:', error);
+                }
+            }
+            
+            // Fallback: Try to create notification via HTTP request to PHP
+            try {
+                const response = await fetch('test_restored_notifications.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'send_test',
+                        userId: 'h8qq0E8avWO74cqS2Goy1wtENJh1'
+                    })
+                });
+                
+                if (response.ok) {
+                    updateStatus('✅ PHP notification sent successfully!', 'success');
+                } else {
+                    updateStatus('⚠️ PHP system not available (no PHP server running)', 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('⚠️ Cannot reach PHP system (no server running)', 'error');
+            }
+            
+            updateStatus('ℹ️ Notification test completed - check results above', 'info');
+        }
+
+        async function checkNotifications() {
+            updateStatus('Checking for notifications...', 'info');
+            
+            // Try Firebase first
+            try {
+                const db = firebase.firestore();
+                const userId = 'h8qq0E8avWO74cqS2Goy1wtENJh1';
+                
+                const snapshot = await db.collection('users')
+                    .doc(userId)
+                    .collection('notifications')
+                    .orderBy('timestamp', 'desc')
+                    .limit(5)
+                    .get();
+                
+                if (!snapshot.empty) {
+                    updateStatus(`✅ Found ${snapshot.size} Firebase notifications`, 'success');
+                    
+                    snapshot.forEach(doc => {
+                        const notif = doc.data();
+                        console.log('Firebase notification:', notif);
+                        updateStatus(`📬 ${notif.title}: ${notif.message}`, 'info');
+                    });
+                    
+                    return;
+                } else {
+                    updateStatus('ℹ️ No Firebase notifications found', 'info');
+                }
+                
+            } catch (error) {
+                updateStatus('⚠️ Firebase check failed: ' + error.message, 'error');
+            }
+            
+            // Try file system
+            try {
+                const response = await fetch('notifications.json');
+                if (response.ok) {
+                    const notifications = await response.json();
+                    const userNotifications = notifications.filter(n => n.userId === 'h8qq0E8avWO74cqS2Goy1wtENJh1');
+                    
+                    if (userNotifications.length > 0) {
+                        updateStatus(`✅ Found ${userNotifications.length} file-based notifications`, 'success');
+                        userNotifications.slice(0, 3).forEach(notif => {
+                            updateStatus(`📁 ${notif.title}: ${notif.message}`, 'info');
+                        });
+                    } else {
+                        updateStatus('ℹ️ No file-based notifications found', 'info');
+                    }
+                } else {
+                    updateStatus('ℹ️ No notifications.json file found', 'info');
+                }
+                
+            } catch (error) {
+                updateStatus('⚠️ File check failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-start basic tests
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                updateStatus('🚀 Ready for testing!', 'success');
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

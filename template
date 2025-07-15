@@ -1,0 +1,142 @@
+<?php
+// Start the session if it hasn't been started yet
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Optional: Redirect if user is not logged in (adjust as per your auth flow)
+if (!isset($_SESSION['username'])) {
+    header('Location: signin.php');
+    exit;
+}
+
+// Optional: For displaying temporary alert messages set in session (e.g., from form submissions)
+if (!isset($_SESSION['alert'])) {
+    $_SESSION['alert'] = null;
+}
+
+// Optional: Enable error reporting for development (remove in production)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+?>
+
+<?php include('navbar.php'); // Include your universal navigation bar ?>
+<?php include('chatbot.php'); ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Title - Your App Name</title> <link href="https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap" rel="stylesheet"> <style>
+        /* Basic layout styles for container, sidebar, and main-content */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh; /* Ensures container takes at least full viewport height */
+        }
+
+        .sidebar {
+            width: 240px;
+            background-color: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            padding: 30px 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+            /* Ensure sidebar is sticky or has min-height if content is short */
+            position: sticky; /* Makes sidebar stick if main content scrolls */
+            top: 0; /* Aligns to the top of the viewport */
+            height: 100vh; /* Takes full viewport height */
+            overflow-y: auto; /* Adds scrollbar if sidebar content exceeds height */
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: 0.2s;
+            display: block; /* Make links block-level for easier clicking */
+            padding: 5px 0; /* Add some padding to sidebar links */
+        }
+
+        .sidebar a:hover {
+            color: #6ea4ce;
+        }
+
+        .main-content {
+            flex: 1; /* Allows main content to take up remaining space */
+            padding: 30px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column; /* Stack sidebar and main content vertically */
+            }
+
+            .sidebar {
+                width: 100%; /* Sidebar takes full width on small screens */
+                height: auto; /* Height adjusts to content */
+                border-right: none;
+                border-bottom: 2px solid #D9D9D9;
+                position: static; /* Remove sticky positioning */
+                padding: 15px 20px; /* Adjust padding for mobile */
+            }
+
+            .sidebar ul {
+                display: flex; /* Make sidebar links horizontal */
+                flex-wrap: wrap; /* Allow wrapping if many links */
+                justify-content: center; /* Center links */
+                gap: 10px 20px; /* Space between links */
+            }
+
+            .sidebar li {
+                margin-bottom: 0; /* Remove vertical margin */
+            }
+
+            .main-content {
+                padding: 15px; /* Adjust padding for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <ul>
+                <li><a href="Dashboard.php">🏠 Home</a></li>
+                <li><a href="Progtracking.php">📈 Progress Tracking</a></li>
+                <li><a href="Appointments.php">📅 Appointments</a></li>
+                <li><a href="Schedule.php">🗓️ Scheduling</a></li>
+                <li><a href="#">📜 History</a></li>
+                <li><a href="Donation.php">💖 Donation Hub</a></li>
+                <li><a href="matching.php">🧩 Matching</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <h2>Welcome to Your Dashboard!</h2>
+            <p>This is a placeholder for the main content of this page.</p>
+            <p>You can add specific information, forms, or displays here.</p>
+
+            </main>
+    </div>
+</body>
+</html>

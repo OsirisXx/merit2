@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Adoption Flow</title>
+</head>
+<body>
+    <h1>Test Adoption Flow</h1>
+    <div id="output"></div>
+    <button onclick="simulateAdoptionStarted()">Simulate Adoption Started</button>
+    <button onclick="simulateStepCompletion()">Simulate Step Completion</button>
+    <button onclick="checkChatsForUser()">Check Chats for User</button>
+    <button onclick="testChatMessagesPage()">Test Chat Messages Page Logic</button>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="firebase_messaging_bridge.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        // Test user IDs
+        const testUserId = 'h8qq0E8avWO74cqS2Goy1wtENJh1'; // Admin user
+        const testAdminId = 'glmjVq9FaVTsy2pdYx2pZGIiqCS2'; // Another admin user
+
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += '<p>' + message + '</p>';
+            console.log(message);
+        }
+
+        async function simulateAdoptionStarted() {
+            try {
+                log('🔑 Authenticating anonymously...');
+                await auth.signInAnonymously();
+                log('✅ Anonymous authentication successful');
+
+                log('👶 Simulating adoption started with centralized chat...');
+                
+                // Use the firebase messaging bridge like ProgTracking.php does
+                if (typeof FirebaseMessagingBridge !== 'undefined') {
+                    const bridge = new FirebaseMessagingBridge();
+                    
+                    await bridge.sendAdoptionStarted(testUserId, testAdminId, 'Test User', 'Test Admin');
+                    log('✅ Adoption started message sent via bridge');
+                } else {
+                    log('⚠️ Firebase messaging bridge not available, using direct centralized approach');
+                    
+                    // Direct approach with centralized chat
+                    const chatId = `user_${testUserId}`; // Centralized chat ID
+                    
+                    const chatData = {
+                        chat_type: 'user_admin_centralized',
+                        user_id: testUserId,
+                        user_name: 'Test User',
+                        connection_type: 'adoption',
+                        created_at: Date.now(),
+                        created_by: 'system',
+                        last_activity: Date.now(),
+                        last_message: 'Adoption process started',
+                        last_message_timestamp: Date.now(),
+                        unread_count: 0,
+                        participant_admins: {
+                            [testAdminId]: {
+                                id: testAdminId,
+                                name: 'Test Admin',
+                                joined_at: Date.now(),
+                                last_active: Date.now()
+                            }
+                        },
+                        is_centralized: true
+                    };
+
+                    await realtimeDb.ref(`chats/${chatId}`).set(chatData);
+                    log('✅ Centralized chat created');
+                    
+                    // Send adoption started message
+                    const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                    const messageData = {
+                        messageId: messageId,
+                        senderId: 'system',
+                        senderName: 'System',
+                        senderRole: 'system',
+                        message: 'Adoption process has started! You are now connected with our admin team for guidance. Test Admin has joined the conversation.',
+                        timestamp: Date.now(),
+                        serverTimestamp: Date.now(),
+                        isSystemMessage: true,
+                        messageType: 'adoption_started',
+                        created_at: Date.now()
+                    };
+
+                    await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                    log('✅ Adoption started message sent to centralized chat');
+                }
+
+            } catch (error) {
+                log('❌ Error simulating adoption started: ' + error.message);
+            }
+        }
+
+        async function simulateStepCompletion() {
+            try {
+                log('📋 Simulating step completion with centralized chat...');
+                
+                const chatId = `user_${testUserId}`; // Centralized chat ID
+                
+                if (typeof FirebaseMessagingBridge !== 'undefined') {
+                    const bridge = new FirebaseMessagingBridge();
+                    
+                    await bridge.sendAdoptionNotification(testUserId, testAdminId, 'Test User', 'Initial Application', 1);
+                    log('✅ Step completion message sent via bridge');
+                } else {
+                    log('⚠️ Firebase messaging bridge not available, using direct approach');
+                    
+                    // Send step completion message
+                    const messageId = realtimeDb.ref(`chats/${chatId}/messages`).push().key;
+                    const messageData = {
+                        messageId: messageId,
+                        senderId: 'system',
+                        senderName: 'System',
+                        senderRole: 'system',
+                        message: '✅ Step 1 completed: Initial Application',
+                        timestamp: Date.now(),
+                        serverTimestamp: Date.now(),
+                        isSystemMessage: true,
+                        messageType: 'step_completion',
+                        stepNumber: 1,
+                        stepName: 'Initial Application',
+                        created_at: Date.now()
+                    };
+
+                    await realtimeDb.ref(`chats/${chatId}/messages/${messageId}`).set(messageData);
+                    
+                    // Update chat's last message
+                    await realtimeDb.ref(`chats/${chatId}`).update({
+                        last_message: messageData.message,
+                        last_message_timestamp: messageData.timestamp,
+                        last_activity: messageData.timestamp
+                    });
+                    
+                    log('✅ Step completion message sent to centralized chat');
+                }
+
+            } catch (error) {
+                log('❌ Error simulating step completion: ' + error.message);
+            }
+        }
+
+        async function checkChatsForUser() {
+            try {
+                log('🔍 Checking centralized chats for user: ' + testUserId);
+                
+                const snapshot = await realtimeDb.ref('chats').once('value');
+                const chats = snapshot.val();
+                
+                if (chats) {
+                    const userChats = [];
+                    Object.keys(chats).forEach(chatId => {
+                        const chat = chats[chatId];
+                        if (chat.is_centralized && chat.user_id === testUserId) {
+                            userChats.push({ id: chatId, ...chat });
+                        }
+                    });
+                    
+                    log('📊 Found ' + userChats.length + ' centralized chats for user:');
+                    userChats.forEach(chat => {
+                        log(`- ${chat.id}: User ${chat.user_name} with admin team (${chat.connection_type})`);
+                        log(`  Last message: "${chat.last_message}" at ${new Date(chat.last_message_timestamp).toLocaleString()}`);
+                        
+                        if (chat.participant_admins) {
+                            const adminNames = Object.values(chat.participant_admins).map(admin => admin.name).join(', ');
+                            log(`  Participating admins: ${adminNames}`);
+                        }
+                    });
+                } else {
+                    log('📊 No chats found in database');
+                }
+
+            } catch (error) {
+                log('❌ Error checking chats: ' + error.message);
+            }
+        }
+
+        async function testChatMessagesPage() {
+            try {
+                log('🧪 Testing centralized chat messages page logic...');
+                
+                // Simulate the chat_messages.php logic
+                await auth.signInAnonymously();
+                log('✅ Anonymous authentication successful');
+                
+                // Get user info from Firestore
+                const userDoc = await db.collection('users').doc(testUserId).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    log('👤 User data found: ' + (userData.username || 'No username'));
+                } else {
+                    log('⚠️ User data not found in Firestore');
+                }
+                
+                // Test as regular user - should see only their centralized chat
+                log('🔍 Testing as regular user...');
+                const userChatId = `user_${testUserId}`;
+                const userChatSnapshot = await realtimeDb.ref(`chats/${userChatId}`).once('value');
+                
+                if (userChatSnapshot.exists()) {
+                    log('✅ User would see their centralized chat');
+                } else {
+                    log('❌ User would not see any chats - this is why the page shows "No conversations yet"');
+                }
+                
+                // Test as admin - should see all centralized chats
+                log('🔍 Testing as admin...');
+                const snapshot = await realtimeDb.ref('chats').once('value');
+                const chats = snapshot.val() || {};
+                
+                const centralizedChats = Object.keys(chats).filter(chatId => {
+                    const chat = chats[chatId];
+                    return chat.is_centralized;
+                });
+                
+                log('📋 Admin would see ' + centralizedChats.length + ' centralized conversations');
+                
+                if (centralizedChats.length > 0) {
+                    log('✅ Admins would see centralized chats');
+                } else {
+                    log('❌ No centralized chats found');
+                }
+
+            } catch (error) {
+                log('❌ Error testing chat messages page: ' + error.message);
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Adoption flow test ready');
+            log('Click buttons to simulate different parts of the adoption process');
+        };
+    </script>
+</body>
+</html> 

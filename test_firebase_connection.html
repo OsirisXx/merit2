@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Connection Test</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <div id="status">Testing...</div>
+    <div id="data"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        console.log('Firebase initialized');
+        console.log('Database URL:', database.app.options.databaseURL);
+
+        // Test connection
+        database.ref('.info/connected').on('value', (snapshot) => {
+            const connected = snapshot.val();
+            const statusDiv = document.getElementById('status');
+            
+            if (connected) {
+                statusDiv.innerHTML = '✅ Connected to Firebase Realtime Database';
+                statusDiv.style.color = 'green';
+                console.log('✅ Connected to Firebase');
+                
+                // Test reading chats
+                testReadChats();
+            } else {
+                statusDiv.innerHTML = '❌ Disconnected from Firebase Realtime Database';
+                statusDiv.style.color = 'red';
+                console.log('❌ Disconnected from Firebase');
+            }
+        });
+
+        function testReadChats() {
+            console.log('📂 Testing chat reading...');
+            
+            database.ref('chats').limitToFirst(5).once('value', (snapshot) => {
+                const dataDiv = document.getElementById('data');
+                
+                if (snapshot.exists()) {
+                    const chats = snapshot.val();
+                    console.log('📂 Found chats:', Object.keys(chats).length);
+                    
+                    let html = '<h3>Found Chats:</h3>';
+                    Object.keys(chats).forEach(chatId => {
+                        const chat = chats[chatId];
+                        html += `<div><strong>${chatId}</strong>: ${chat.user_name || 'Unknown'} - ${chat.last_message || 'No messages'}</div>`;
+                    });
+                    
+                    dataDiv.innerHTML = html;
+                } else {
+                    console.log('📂 No chats found');
+                    dataDiv.innerHTML = '<div>No chats found in database</div>';
+                }
+            }, (error) => {
+                console.error('❌ Error reading chats:', error);
+                dataDiv.innerHTML = '<div style="color: red;">Error reading chats: ' + error.message + '</div>';
+            });
+        }
+    </script>
+</body>
+</html> 

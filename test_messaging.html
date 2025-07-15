@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Messaging System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Messaging System Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Create Adoption Connection</h3>
+        <button onclick="testAdoptionStarted()">Test Adoption Started</button>
+        <div id="result1" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Send Step Completion Message</h3>
+        <button onclick="testStepCompleted()">Test Step Completed</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Check Firebase Connection</h3>
+        <button onclick="testFirebaseConnection()">Test Firebase</button>
+        <div id="result3" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 4: View Chat Messages</h3>
+        <a href="chat_messages.php" target="_blank">
+            <button>Open Chat Messages</button>
+        </a>
+        <div id="result4" class="result"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const realtimeDb = firebase.database();
+
+        function showResult(elementId, message, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isSuccess ? 'result success' : 'result error';
+        }
+
+        async function testAdoptionStarted() {
+            try {
+                const response = await fetch('adoption_message_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'adoption_started',
+                        userId: 'testuser123',
+                        username: 'Test User'
+                    })
+                });
+                
+                const result = await response.json();
+                showResult('result1', `Adoption started: ${result.success ? 'SUCCESS' : 'FAILED'} - ${result.message || result.error}`, result.success);
+            } catch (error) {
+                showResult('result1', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testStepCompleted() {
+            try {
+                const response = await fetch('adoption_message_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'step_completed',
+                        userId: 'testuser123',
+                        stepNumber: 1,
+                        stepName: 'Initial Application',
+                        username: 'Test User'
+                    })
+                });
+                
+                const result = await response.json();
+                showResult('result2', `Step completed: ${result.success ? 'SUCCESS' : 'FAILED'} - ${result.message || result.error}`, result.success);
+            } catch (error) {
+                showResult('result2', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testFirebaseConnection() {
+            try {
+                // Test Firebase connection by reading from chats
+                const snapshot = await realtimeDb.ref('chats').limitToFirst(1).once('value');
+                const chats = snapshot.val();
+                
+                if (chats) {
+                    const chatCount = Object.keys(chats).length;
+                    showResult('result3', `Firebase connected! Found ${chatCount} chat(s)`, true);
+                } else {
+                    showResult('result3', 'Firebase connected but no chats found', true);
+                }
+            } catch (error) {
+                showResult('result3', `Firebase connection failed: ${error.message}`, false);
+            }
+        }
+
+        // Test Firebase connection on page load
+        window.onload = function() {
+            testFirebaseConnection();
+        };
+    </script>
+</body>
+</html> 

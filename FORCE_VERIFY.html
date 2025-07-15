@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FORCE VERIFY USER</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        input { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; }
+        button { width: 100%; padding: 15px; font-size: 18px; background: red; color: white; border: none; cursor: pointer; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: green; color: white; }
+        .error { background: red; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔥 FORCE VERIFY USER</h1>
+    <p>This will FORCE verify any user regardless of email verification status.</p>
+    
+    <input type="email" id="email" placeholder="Enter email address" value="raijinjyn1@gmail.com">
+    <button onclick="forceVerify()">FORCE VERIFY NOW</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function forceVerify() {
+            const email = document.getElementById('email').value;
+            const result = document.getElementById('result');
+            
+            result.innerHTML = 'FORCING VERIFICATION...';
+            
+            try {
+                const response = await fetch('force_verify_user.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `
+                        <div class="success">
+                            ✅ SUCCESS! User ${email} is now VERIFIED!
+                            <br>User ID: ${data.userId}
+                            <br>isVerified: ${data.isVerified}
+                            <br>emailVerified: ${data.emailVerified}
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">
+                            ❌ ERROR: ${data.error}
+                            <br>Details: ${JSON.stringify(data)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ ERROR: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostinger 403 Error Fix Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .alert { padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; }
+        .steps { background: #fff3cd; padding: 15px; border-radius: 5px; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🚨 Hostinger 403 Forbidden Error - Fix Guide</h1>
+    
+    <div class="alert alert-danger">
+        <h3>Problem:</h3>
+        <p>You uploaded the Ally folder to Hostinger's public_html but getting <strong>403 Forbidden</strong> error.</p>
+    </div>
+
+    <div class="alert alert-success">
+        <h3>✅ SOLUTION IMPLEMENTED:</h3>
+        <p>I've created a lowercase <code>index.php</code> file that redirects to your main <code>Index.php</code> file. This should fix the 403 error immediately.</p>
+    </div>
+
+    <h2>Why This Happens:</h2>
+    <ul>
+        <li><strong>Web servers look for:</strong> <code>index.php</code> (lowercase)</li>
+        <li><strong>Your main file is:</strong> <code>Index.php</code> (capital I)</li>
+        <li><strong>Without a default index:</strong> Server shows 403 Forbidden</li>
+    </ul>
+
+    <h2>What I Fixed:</h2>
+    <div class="steps">
+        <h3>Created lowercase index.php with:</h3>
+        <div class="code">
+&lt;?php<br>
+// Default index file to fix 403 Forbidden error on Hostinger<br>
+// Web servers look for lowercase index.php as default, so we redirect to Index.php<br>
+<br>
+header('Location: Index.php');<br>
+exit;<br>
+?&gt;
+        </div>
+    </div>
+
+    <h2>File Structure in public_html:</h2>
+    <div class="code">
+public_html/<br>
+├── index.php (lowercase - redirects to Index.php)<br>
+├── Index.php (capital I - main landing page)<br>
+├── Dashboard.php<br>
+├── Signin.php<br>
+├── navbar.php<br>
+├── notifications.json<br>
+├── functions/<br>
+└── ... (all other files)
+    </div>
+
+    <h2>Additional Fixes (if still having issues):</h2>
+    
+    <div class="alert alert-info">
+        <h3>1. Check File Permissions:</h3>
+        <ul>
+            <li>Login to Hostinger hPanel</li>
+            <li>Go to File Manager</li>
+            <li>Select all files</li>
+            <li>Right-click → "Change Permissions"</li>
+            <li>Set folders to 755, files to 644</li>
+        </ul>
+    </div>
+
+    <div class="alert alert-info">
+        <h3>2. Verify Upload Structure:</h3>
+        <p>Make sure ALL Ally folder contents are directly in <code>public_html</code>, not in a subfolder.</p>
+    </div>
+
+    <h2>Firebase Cloud Function (index.js):</h2>
+    <div class="alert alert-success">
+        <h3>✅ Your Firebase function is PERFECT - keep it!</h3>
+        <p>The <code>index.js</code> file handles email verification backup. It:</p>
+        <ul>
+            <li>Monitors Firestore user changes</li>
+            <li>Updates <code>isVerified</code> when email is verified</li>
+            <li>Provides redundancy for critical verification</li>
+        </ul>
+    </div>
+
+    <h2>Testing Steps:</h2>
+    <ol>
+        <li>Visit your domain: <code>https://yourdomain.com</code></li>
+        <li>Should see Meritxell landing page</li>
+        <li>Test sign up/sign in functionality</li>
+        <li>Check notification bell works</li>
+    </ol>
+
+    <div class="alert alert-info">
+        <h3>If Still Having Issues:</h3>
+        <ul>
+            <li>Check Hostinger error logs in hPanel</li>
+            <li>Try accessing <code>https://yourdomain.com/Index.php</code> directly</li>
+            <li>Verify PHP version is 7.4+ in hPanel settings</li>
+            <li>Contact Hostinger support with specific error details</li>
+        </ul>
+    </div>
+
+    <p><strong>The lowercase index.php redirect should resolve your 403 Forbidden error immediately!</strong></p>
+</body>
+</html> 

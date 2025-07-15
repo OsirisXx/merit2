@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Messaging Bridge</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f0f0f0;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Messaging Bridge Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Check Firebase Connection</h3>
+        <button onclick="testFirebaseConnection()">Test Firebase Connection</button>
+        <div id="result1" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Test Messaging Bridge</h3>
+        <button onclick="testMessagingBridge()">Test Messaging Bridge</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Send Adoption Started Message</h3>
+        <button onclick="testAdoptionStarted()">Send Adoption Started</button>
+        <div id="result3" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 4: Send Step Completion Message</h3>
+        <button onclick="testStepCompletion()">Send Step Completion</button>
+        <div id="result4" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 5: View Chat Messages</h3>
+        <a href="chat_messages.php" target="_blank">
+            <button>Open Chat Messages</button>
+        </a>
+        <div id="result5" class="result">Click the button above to view chat messages in a new tab</div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+    
+    <!-- Firebase Messaging Bridge -->
+    <script src="firebase_messaging_bridge.js"></script>
+    
+    <script>
+        function showResult(elementId, message, isSuccess) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isSuccess ? 'result success' : 'result error';
+        }
+
+        async function testFirebaseConnection() {
+            try {
+                // Test Firebase Realtime Database connection
+                const testRef = firebase.database().ref('test');
+                await testRef.set({ timestamp: Date.now() });
+                
+                showResult('result1', 'Firebase connection successful!', true);
+            } catch (error) {
+                showResult('result1', `Firebase connection failed: ${error.message}`, false);
+            }
+        }
+
+        async function testMessagingBridge() {
+            try {
+                if (window.firebaseMessagingBridge) {
+                    showResult('result2', 'Firebase messaging bridge is available!', true);
+                } else {
+                    showResult('result2', 'Firebase messaging bridge is NOT available', false);
+                }
+            } catch (error) {
+                showResult('result2', `Error testing messaging bridge: ${error.message}`, false);
+            }
+        }
+
+        async function testAdoptionStarted() {
+            try {
+                if (!window.firebaseMessagingBridge) {
+                    showResult('result3', 'Firebase messaging bridge not available', false);
+                    return;
+                }
+                
+                const chatId = await window.firebaseMessagingBridge.sendAdoptionStarted('testuser123', 'Test User');
+                showResult('result3', `Adoption started message sent! Chat ID: ${chatId}`, true);
+            } catch (error) {
+                showResult('result3', `Error sending adoption started message: ${error.message}`, false);
+            }
+        }
+
+        async function testStepCompletion() {
+            try {
+                if (!window.firebaseMessagingBridge) {
+                    showResult('result4', 'Firebase messaging bridge not available', false);
+                    return;
+                }
+                
+                const messageId = await window.firebaseMessagingBridge.sendAdoptionNotification(
+                    'testuser123',
+                    1,
+                    'Initial Application',
+                    'completed'
+                );
+                showResult('result4', `Step completion message sent! Message ID: ${messageId}`, true);
+            } catch (error) {
+                showResult('result4', `Error sending step completion message: ${error.message}`, false);
+            }
+        }
+
+        // Test Firebase connection on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testFirebaseConnection();
+                testMessagingBridge();
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 

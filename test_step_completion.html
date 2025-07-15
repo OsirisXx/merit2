@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Step Completion Messages</title>
+</head>
+<body>
+    <h1>Test Step Completion Messages</h1>
+    <button onclick="testStepCompletion()">Test Step Completion</button>
+    <div id="result"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="firebase_messaging_bridge.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCH6Joz4RZPyR0v5NTECJ_A0NJZUiaZMRk",
+            authDomain: "ally-user.firebaseapp.com",
+            databaseURL: "https://ally-user-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ally-user",
+            storageBucket: "ally-user.firebasestorage.app",
+            messagingSenderId: "567088674192",
+            appId: "1:567088674192:web:76b5ef895c1181fa4aaf15"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        async function testStepCompletion() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing step completion...';
+            
+            try {
+                // Test user ID (replace with actual user ID)
+                const testUserId = 'L2zi1kfYUoO5ScGBwb7dY06Wkca2';
+                
+                // Test step completion
+                await window.firebaseMessagingBridge.sendAdoptionNotification(
+                    testUserId,
+                    5,
+                    'Financial Assessment',
+                    'completed'
+                );
+                
+                resultDiv.innerHTML = '✅ Step completion message sent successfully!';
+                
+                // Check if message was created
+                const chatId = `user_${testUserId}`;
+                const messagesRef = firebase.database().ref(`chats/${chatId}/messages`);
+                
+                messagesRef.limitToLast(1).once('value', (snapshot) => {
+                    const messages = snapshot.val();
+                    if (messages) {
+                        const lastMessage = Object.values(messages)[0];
+                        resultDiv.innerHTML += `<br><br>Last message: ${lastMessage.message}`;
+                        resultDiv.innerHTML += `<br>Has progress button: ${lastMessage.hasProgressButton}`;
+                        resultDiv.innerHTML += `<br>Progress URL: ${lastMessage.progressUrl}`;
+                    }
+                });
+                
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 
